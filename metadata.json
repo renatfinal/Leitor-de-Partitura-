@@ -1,0 +1,6 @@
+{
+  "name": "Leitura de Partitura",
+  "description": "App web e jogo interativo para treino de leitura de partituras musicais com claves de Sol, Fá e Dó, feedback sonoro e visual em tempo real, precisão e configurações de velocidade.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
