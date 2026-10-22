@@ -13,6 +13,7 @@ import { GameScreen } from '@/components/GameScreen';
 import { SettingsModal } from '@/components/SettingsModal';
 import { LearnNotesModal } from '@/components/LearnNotesModal';
 import { RankingModal, GameRecord } from '@/components/RankingModal';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function Home() {
@@ -109,7 +110,12 @@ export default function Home() {
       />
 
       {/* TOP HEADER - matching screenshot 5b888cbb */}
-      <header className="relative z-10 pt-8 sm:pt-12 pb-4 px-4 text-center">
+      <header className="relative z-10 pt-4 sm:pt-8 pb-3 px-4 text-center">
+        {/* Top App Bar Install Prompt */}
+        <div className="w-full max-w-md mx-auto flex items-center justify-end mb-2 px-1">
+          <PWAInstallButton />
+        </div>
+
         <div className="inline-block relative">
           <motion.h1
             initial={{ y: -20, opacity: 0 }}

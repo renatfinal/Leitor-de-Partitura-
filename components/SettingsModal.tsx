@@ -11,7 +11,8 @@ import {
   SPEED_CONFIG,
 } from '@/lib/musicTheory';
 import { synth } from '@/lib/audioSynth';
-import { Volume2, VolumeX, Music, Gauge, Sliders, Check } from 'lucide-react';
+import { Volume2, VolumeX, Music, Gauge, Sliders, Check, Smartphone } from 'lucide-react';
+import { PWAInstallButton } from '@/components/PWAInstallButton';
 
 interface SettingsModalProps {
   settings: GameSettings;
@@ -335,6 +336,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* 7. Suporte Offline & PWA */}
+          <div className="pt-2 border-t border-amber-900/20 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-stone-800 flex items-center gap-1">
+                <Smartphone className="w-3.5 h-3.5 text-amber-800" /> Modo Offline & Instalação
+              </span>
+              <p className="text-[11px] text-stone-600">
+                O aplicativo e os sons funcionam mesmo sem sinal de internet.
+              </p>
+            </div>
+            <PWAInstallButton />
           </div>
         </div>
 
