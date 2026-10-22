@@ -1,7 +1,7 @@
 // Service Worker for "Leitura de Partitura" PWA
 // Provides 100% offline capability, intelligent caching and instant loading
 
-const CACHE_NAME = 'partitura-pwa-v1';
+const CACHE_NAME = 'partitura-pwa-v2';
 
 const PRECACHE_ASSETS = [
   '/',
