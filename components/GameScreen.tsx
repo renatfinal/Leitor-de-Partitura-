@@ -45,7 +45,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
   const [currentNote, setCurrentNote] = useState<NoteDefinition | null>(() => {
     const initialPool = getAvailableNotes(settings.clef, settings.ledgerLines);
-    return initialPool.length > 0 ? initialPool[Math.floor(Math.random() * initialPool.length)] : null;
+    return initialPool.length > 0 ? initialPool[Math.floor(initialPool.length / 2)] : null;
   });
 
   const [score, setScore] = useState<number>(0);

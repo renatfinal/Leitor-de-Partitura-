@@ -1,9 +1,9 @@
 // components/RankingModal.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import { synth } from '@/lib/audioSynth';
-import { Trophy, Target, Award, Trash2, Calendar } from 'lucide-react';
+import { Trophy, Target, Award, Trash2, Calendar, AlertTriangle } from 'lucide-react';
 
 export interface GameRecord {
   id: string;
@@ -15,34 +15,76 @@ export interface GameRecord {
   speed: string;
 }
 
+const HISTORY_KEY = 'music_game_history';
+const HISTORY_EVENT = 'music_game_history_updated';
+const defaultHistoryStr = '[]';
+
+function subscribeHistory(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  window.addEventListener('storage', callback);
+  window.addEventListener(HISTORY_EVENT, callback);
+  return () => {
+    window.removeEventListener('storage', callback);
+    window.removeEventListener(HISTORY_EVENT, callback);
+  };
+}
+
+function getHistorySnapshot(): string {
+  if (typeof window === 'undefined') return defaultHistoryStr;
+  try {
+    return localStorage.getItem(HISTORY_KEY) || defaultHistoryStr;
+  } catch {
+    return defaultHistoryStr;
+  }
+}
+
+function getHistoryServerSnapshot(): string {
+  return defaultHistoryStr;
+}
+
 interface RankingModalProps {
   onClose: () => void;
 }
 
 export const RankingModal: React.FC<RankingModalProps> = ({ onClose }) => {
-  const [history, setHistory] = useState<GameRecord[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('music_game_history');
-        if (saved) return JSON.parse(saved);
-      } catch {
-        // Ignore
-      }
-    }
-    return [];
-  });
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
-  const handleClearHistory = () => {
+  const historyStr = useSyncExternalStore(
+    subscribeHistory,
+    getHistorySnapshot,
+    getHistoryServerSnapshot
+  );
+
+  let history: GameRecord[] = [];
+  try {
+    history = JSON.parse(historyStr);
+  } catch {
+    history = [];
+  }
+
+  const handleOpenConfirm = () => {
     synth.playClick();
-    if (window.confirm('Deseja realmente limpar todo o histórico de pontuações?')) {
-      localStorage.removeItem('music_game_history');
-      setHistory([]);
+    setShowConfirmModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    synth.playClick();
+    setShowConfirmModal(false);
+  };
+
+  const handleConfirmDelete = () => {
+    synth.playClick();
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+      window.dispatchEvent(new Event(HISTORY_EVENT));
+    } catch {
+      // Ignore
     }
+    setShowConfirmModal(false);
   };
 
   const highScore = history.reduce((max, r) => Math.max(max, r.score), 0);
   const bestAccuracy = history.reduce((max, r) => Math.max(max, r.accuracy), 0);
-  const totalNotesPlayed = history.reduce((sum, r) => sum + r.totalNotes, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto">
@@ -108,10 +150,12 @@ export const RankingModal: React.FC<RankingModalProps> = ({ onClose }) => {
               {history.length > 0 && (
                 <button
                   type="button"
-                  onClick={handleClearHistory}
-                  className="text-xs text-stone-500 hover:text-red-700 flex items-center gap-1 transition-colors"
+                  onClick={handleOpenConfirm}
+                  className="text-xs font-semibold text-stone-600 hover:text-red-700 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-200/90 hover:bg-red-50 border border-stone-300 transition-all cursor-pointer shadow-2xs active:scale-95"
+                  title="Excluir Histórico"
                 >
-                  <Trash2 className="w-3 h-3" /> Limpar
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  <span>Limpar Histórico</span>
                 </button>
               )}
             </div>
@@ -176,12 +220,51 @@ export const RankingModal: React.FC<RankingModalProps> = ({ onClose }) => {
               synth.playClick();
               onClose();
             }}
-            className="w-48 py-2.5 bg-[#52525b] hover:bg-[#3f3f46] text-white font-bold text-base tracking-wider rounded-md uppercase shadow-md transition-transform active:scale-95 border border-stone-500/40"
+            className="w-48 py-2.5 bg-[#52525b] hover:bg-[#3f3f46] text-white font-bold text-base tracking-wider rounded-md uppercase shadow-md transition-transform active:scale-95 border border-stone-500/40 cursor-pointer"
           >
             VOLTAR
           </button>
         </div>
       </div>
+
+      {/* CONFIRMATION POPUP MODAL REQUESTED BY USER:
+          "abre uma pequena janela com botão ( Não) na cor vermelha e ( Sim) na cor verde com uma mensagem ( Deseja excluir Histórico)" */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs">
+          <div className="relative w-full max-w-xs rounded-2xl overflow-hidden shadow-2xl border border-stone-600 bg-stone-900 text-white p-6 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-950/90 border border-red-500/60 flex items-center justify-center text-red-400">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-lg font-black text-white mb-2 leading-tight">
+              Deseja excluir Histórico?
+            </h3>
+            <p className="text-xs text-stone-400 mb-6">
+              Todos os recordes e partidas gravadas serão apagados.
+            </p>
+
+            <div className="flex items-center justify-center gap-3">
+              {/* Botão Não (na cor vermelha) */}
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-sm rounded-lg shadow-md transition-all active:scale-95 cursor-pointer border border-red-500/50"
+              >
+                Não
+              </button>
+
+              {/* Botão Sim (na cor verde) */}
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-sm rounded-lg shadow-md transition-all active:scale-95 cursor-pointer border border-emerald-500/50"
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
